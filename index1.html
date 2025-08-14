@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Impara Hiragana e Katakana</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
+        .japanese-font { font-family: 'Noto Sans JP', sans-serif; }
+        .card-flip {
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+        }
+        .card-flip.flipped {
+            transform: rotateY(180deg);
+        }
+        .card-front, .card-back {
+            backface-visibility: hidden;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+        .card-back {
+            transform: rotateY(180deg);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-purple-100 to-pink-100 min-h-screen japanese-font">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-purple-800 mb-2">日本語を学ぼう</h1>
+            <p class="text-lg text-gray-700">Impara Hiragana e Katakana</p>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="flex justify-center mb-8">
+            <div class="bg-white rounded-full p-2 shadow-lg">
+                <button id="studyBtn" class="px-6 py-3 rounded-full bg-purple-600 text-white font-medium transition-all">
+                    📚 Studio
+                </button>
+                <button id="practiceBtn" class="px-6 py-3 rounded-full text-purple-600 font-medium transition-all hover:bg-purple-50">
+                    🎯 Esercizi
+                </button>
+            </div>
+        </nav>
+
+        <!-- Study Section -->
+        <div id="studySection" class="space-y-8">
+            <!-- Alphabet Selector -->
+            <div class="flex justify-center mb-6">
+                <div class="bg-white rounded-lg p-2 shadow-md">
+                    <button id="hiraganaBtn" class="px-4 py-2 rounded-md bg-blue-500 text-white font-medium">
+                        ひらがな Hiragana
+                    </button>
+                    <button id="katakanaBtn" class="px-4 py-2 rounded-md text-blue-500 font-medium hover:bg-blue-50">
+                        カタカナ Katakana
+                    </button>
+                </div>
+            </div>
+
+            <!-- Character Grid -->
+            <div id="characterGrid" class="grid grid-cols-5 md:grid-cols-10 gap-4 max-w-6xl mx-auto">
+                <!-- Characters will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Practice Section -->
+        <div id="practiceSection" class="hidden">
+            <div class="max-w-2xl mx-auto">
+                <!-- Practice Mode Selector -->
+                <div class="flex justify-center mb-6">
+                    <div class="bg-white rounded-lg p-2 shadow-md">
+                        <button id="recognitionBtn" class="px-4 py-2 rounded-md bg-green-500 text-white font-medium">
+                            🔍 Riconoscimento
+                        </button>
+                        <button id="writingBtn" class="px-4 py-2 rounded-md text-green-500 font-medium hover:bg-green-50">
+                            ✍️ Scrittura
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Practice Card -->
+                <div id="practiceCard" class="bg-white rounded-xl shadow-xl p-8 text-center">
+                    <div class="mb-6">
+                        <div id="questionText" class="text-6xl mb-4 japanese-font">あ</div>
+                        <div id="questionPrompt" class="text-lg text-gray-600">Come si legge questo carattere?</div>
+                    </div>
+
+                    <!-- Answer Options -->
+                    <div id="answerOptions" class="grid grid-cols-2 gap-4 mb-6">
+                        <!-- Options will be populated by JavaScript -->
+                    </div>
+
+                    <!-- Writing Input -->
+                    <div id="writingInput" class="hidden mb-6">
+                        <input type="text" id="writingAnswer" class="w-full p-4 text-center text-2xl border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none" placeholder="Scrivi la romanizzazione...">
+                    </div>
+
+                    <!-- Feedback -->
+                    <div id="feedback" class="hidden mb-6 p-4 rounded-lg">
+                        <div id="feedbackText" class="text-lg font-medium"></div>
+                    </div>
+
+                    <!-- Controls -->
+                    <div class="flex justify-center space-x-4">
+                        <button id="nextBtn" class="px-6 py-3 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors">
+                            Prossimo →
+                        </button>
+                        <button id="checkBtn" class="hidden px-6 py-3 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-colors">
+                            Controlla
+                        </button>
+                    </div>
+
+                    <!-- Score and Progress -->
+                    <div class="mt-6 space-y-2">
+                        <div class="text-sm text-gray-600">
+                            Punteggio: <span id="score">0</span>/<span id="total">0</span>
+                        </div>
+                        <div class="text-xs text-gray-500">
+                            <span id="exerciseInfo">Hiragana: 46 caratteri disponibili</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Character data
+        const hiraganaChars = {
+            'あ': 'a', 'い': 'i', 'う': 'u', 'え': 'e', 'お': 'o',
+            'か': 'ka', 'き': 'ki', 'く': 'ku', 'け': 'ke', 'こ': 'ko',
+            'さ': 'sa', 'し': 'shi', 'す': 'su', 'せ': 'se', 'そ': 'so',
+            'た': 'ta', 'ち': 'chi', 'つ': 'tsu', 'て': 'te', 'と': 'to',
+            'な': 'na', 'に': 'ni', 'ぬ': 'nu', 'ね': 'ne', 'の': 'no',
+            'は': 'ha', 'ひ': 'hi', 'ふ': 'fu', 'へ': 'he', 'ほ': 'ho',
+            'ま': 'ma', 'み': 'mi', 'む': 'mu', 'め': 'me', 'も': 'mo',
+            'や': 'ya', 'ゆ': 'yu', 'よ': 'yo',
+            'ら': 'ra', 'り': 'ri', 'る': 'ru', 'れ': 're', 'ろ': 'ro',
+            'わ': 'wa', 'を': 'wo', 'ん': 'n'
+        };
+
+        const katakanaChars = {
+            'ア': 'a', 'イ': 'i', 'ウ': 'u', 'エ': 'e', 'オ': 'o',
+            'カ': 'ka', 'キ': 'ki', 'ク': 'ku', 'ケ': 'ke', 'コ': 'ko',
+            'サ': 'sa', 'シ': 'shi', 'ス': 'su', 'セ': 'se', 'ソ': 'so',
+            'タ': 'ta', 'チ': 'chi', 'ツ': 'tsu', 'テ': 'te', 'ト': 'to',
+            'ナ': 'na', 'ニ': 'ni', 'ヌ': 'nu', 'ネ': 'ne', 'ノ': 'no',
+            'ハ': 'ha', 'ヒ': 'hi', 'フ': 'fu', 'ヘ': 'he', 'ホ': 'ho',
+            'マ': 'ma', 'ミ': 'mi', 'ム': 'mu', 'メ': 'me', 'モ': 'mo',
+            'ヤ': 'ya', 'ユ': 'yu', 'ヨ': 'yo',
+            'ラ': 'ra', 'リ': 'ri', 'ル': 'ru', 'レ': 're', 'ロ': 'ro',
+            'ワ': 'wa', 'ヲ': 'wo', 'ン': 'n'
+        };
+
+        // State
+        let currentAlphabet = 'hiragana';
+        let currentMode = 'study';
+        let practiceMode = 'recognition';
+        let currentQuestion = null;
+        let score = 0;
+        let total = 0;
+
+        // DOM elements
+        const studyBtn = document.getElementById('studyBtn');
+        const practiceBtn = document.getElementById('practiceBtn');
+        const studySection = document.getElementById('studySection');
+        const practiceSection = document.getElementById('practiceSection');
+        const hiraganaBtn = document.getElementById('hiraganaBtn');
+        const katakanaBtn = document.getElementById('katakanaBtn');
+        const characterGrid = document.getElementById('characterGrid');
+        const recognitionBtn = document.getElementById('recognitionBtn');
+        const writingBtn = document.getElementById('writingBtn');
+        const practiceCard = document.getElementById('practiceCard');
+        const questionText = document.getElementById('questionText');
+        const questionPrompt = document.getElementById('questionPrompt');
+        const answerOptions = document.getElementById('answerOptions');
+        const writingInput = document.getElementById('writingInput');
+        const writingAnswer = document.getElementById('writingAnswer');
+        const feedback = document.getElementById('feedback');
+        const feedbackText = document.getElementById('feedbackText');
+        const nextBtn = document.getElementById('nextBtn');
+        const checkBtn = document.getElementById('checkBtn');
+        const scoreSpan = document.getElementById('score');
+        const totalSpan = document.getElementById('total');
+        const exerciseInfo = document.getElementById('exerciseInfo');
+
+        // Event listeners
+        studyBtn.addEventListener('click', () => switchMode('study'));
+        practiceBtn.addEventListener('click', () => switchMode('practice'));
+        hiraganaBtn.addEventListener('click', () => switchAlphabet('hiragana'));
+        katakanaBtn.addEventListener('click', () => switchAlphabet('katakana'));
+        recognitionBtn.addEventListener('click', () => switchPracticeMode('recognition'));
+        writingBtn.addEventListener('click', () => switchPracticeMode('writing'));
+        nextBtn.addEventListener('click', nextQuestion);
+        checkBtn.addEventListener('click', checkWritingAnswer);
+        writingAnswer.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') checkWritingAnswer();
+        });
+
+        // Functions
+        function switchMode(mode) {
+            currentMode = mode;
+            if (mode === 'study') {
+                studyBtn.className = 'px-6 py-3 rounded-full bg-purple-600 text-white font-medium transition-all';
+                practiceBtn.className = 'px-6 py-3 rounded-full text-purple-600 font-medium transition-all hover:bg-purple-50';
+                studySection.classList.remove('hidden');
+                practiceSection.classList.add('hidden');
+                renderCharacterGrid();
+            } else {
+                practiceBtn.className = 'px-6 py-3 rounded-full bg-purple-600 text-white font-medium transition-all';
+                studyBtn.className = 'px-6 py-3 rounded-full text-purple-600 font-medium transition-all hover:bg-purple-50';
+                studySection.classList.add('hidden');
+                practiceSection.classList.remove('hidden');
+                startPractice();
+            }
+        }
+
+        function switchAlphabet(alphabet) {
+            currentAlphabet = alphabet;
+            if (alphabet === 'hiragana') {
+                hiraganaBtn.className = 'px-4 py-2 rounded-md bg-blue-500 text-white font-medium';
+                katakanaBtn.className = 'px-4 py-2 rounded-md text-blue-500 font-medium hover:bg-blue-50';
+            } else {
+                katakanaBtn.className = 'px-4 py-2 rounded-md bg-blue-500 text-white font-medium';
+                hiraganaBtn.className = 'px-4 py-2 rounded-md text-blue-500 font-medium hover:bg-blue-50';
+            }
+            updateExerciseInfo();
+            if (currentMode === 'study') {
+                renderCharacterGrid();
+            } else {
+                startPractice();
+            }
+        }
+
+        function switchPracticeMode(mode) {
+            practiceMode = mode;
+            if (mode === 'recognition') {
+                recognitionBtn.className = 'px-4 py-2 rounded-md bg-green-500 text-white font-medium';
+                writingBtn.className = 'px-4 py-2 rounded-md text-green-500 font-medium hover:bg-green-50';
+            } else {
+                writingBtn.className = 'px-4 py-2 rounded-md bg-green-500 text-white font-medium';
+                recognitionBtn.className = 'px-4 py-2 rounded-md text-green-500 font-medium hover:bg-green-50';
+            }
+            startPractice();
+        }
+
+        function renderCharacterGrid() {
+            const chars = currentAlphabet === 'hiragana' ? hiraganaChars : katakanaChars;
+            characterGrid.innerHTML = '';
+            
+            Object.entries(chars).forEach(([char, romaji]) => {
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-lg shadow-md p-6 text-center hover:shadow-lg transition-shadow cursor-pointer card-flip min-h-[120px] flex flex-col justify-center';
+                card.innerHTML = `
+                    <div class="card-front">
+                        <div class="text-5xl mb-3 japanese-font font-bold text-gray-800">${char}</div>
+                        <div class="text-lg font-semibold text-gray-700 bg-gray-100 px-3 py-1 rounded-full">${romaji}</div>
+                    </div>
+                    <div class="card-back bg-blue-50 rounded-lg p-6 flex flex-col justify-center">
+                        <div class="text-3xl mb-3 text-blue-700 font-bold">${romaji}</div>
+                        <div class="text-4xl japanese-font font-bold text-blue-600">${char}</div>
+                    </div>
+                `;
+                
+                card.addEventListener('click', () => {
+                    card.classList.toggle('flipped');
+                });
+                
+                characterGrid.appendChild(card);
+            });
+        }
+
+        function startPractice() {
+            score = 0;
+            total = 0;
+            updateScore();
+            nextQuestion();
+        }
+
+        function nextQuestion() {
+            const chars = currentAlphabet === 'hiragana' ? hiraganaChars : katakanaChars;
+            const charArray = Object.entries(chars);
+            const randomChar = charArray[Math.floor(Math.random() * charArray.length)];
+            
+            currentQuestion = {
+                char: randomChar[0],
+                correct: randomChar[1]
+            };
+
+            questionText.textContent = currentQuestion.char;
+            feedback.classList.add('hidden');
+            
+            if (practiceMode === 'recognition') {
+                setupRecognitionQuestion();
+            } else {
+                setupWritingQuestion();
+            }
+        }
+
+        function setupRecognitionQuestion() {
+            questionPrompt.textContent = 'Come si legge questo carattere?';
+            answerOptions.classList.remove('hidden');
+            writingInput.classList.add('hidden');
+            nextBtn.classList.remove('hidden');
+            checkBtn.classList.add('hidden');
+
+            // Generate options
+            const chars = currentAlphabet === 'hiragana' ? hiraganaChars : katakanaChars;
+            const allRomaji = Object.values(chars);
+            const options = [currentQuestion.correct];
+            
+            while (options.length < 4) {
+                const randomRomaji = allRomaji[Math.floor(Math.random() * allRomaji.length)];
+                if (!options.includes(randomRomaji)) {
+                    options.push(randomRomaji);
+                }
+            }
+            
+            // Shuffle options
+            options.sort(() => Math.random() - 0.5);
+            
+            answerOptions.innerHTML = '';
+            options.forEach(option => {
+                const button = document.createElement('button');
+                button.className = 'p-3 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium';
+                button.textContent = option;
+                button.addEventListener('click', () => checkRecognitionAnswer(option));
+                answerOptions.appendChild(button);
+            });
+        }
+
+        function setupWritingQuestion() {
+            questionPrompt.textContent = 'Scrivi la romanizzazione di questo carattere:';
+            answerOptions.classList.add('hidden');
+            writingInput.classList.remove('hidden');
+            nextBtn.classList.add('hidden');
+            checkBtn.classList.remove('hidden');
+            writingAnswer.value = '';
+            writingAnswer.focus();
+        }
+
+        function checkRecognitionAnswer(selected) {
+            total++;
+            const isCorrect = selected === currentQuestion.correct;
+            
+            if (isCorrect) {
+                score++;
+                showFeedback('Corretto! 🎉', 'bg-green-100 text-green-800');
+            } else {
+                showFeedback(`Sbagliato. La risposta corretta è: ${currentQuestion.correct}`, 'bg-red-100 text-red-800');
+            }
+            
+            updateScore();
+            
+            // Disable all option buttons
+            const buttons = answerOptions.querySelectorAll('button');
+            buttons.forEach(btn => {
+                btn.disabled = true;
+                if (btn.textContent === currentQuestion.correct) {
+                    btn.className = 'p-3 bg-green-200 rounded-lg font-medium';
+                } else if (btn.textContent === selected && !isCorrect) {
+                    btn.className = 'p-3 bg-red-200 rounded-lg font-medium';
+                }
+            });
+        }
+
+        function checkWritingAnswer() {
+            const userAnswer = writingAnswer.value.toLowerCase().trim();
+            total++;
+            
+            if (userAnswer === currentQuestion.correct) {
+                score++;
+                showFeedback('Corretto! 🎉', 'bg-green-100 text-green-800');
+            } else {
+                showFeedback(`Sbagliato. La risposta corretta è: ${currentQuestion.correct}`, 'bg-red-100 text-red-800');
+            }
+            
+            updateScore();
+            nextBtn.classList.remove('hidden');
+            checkBtn.classList.add('hidden');
+        }
+
+        function showFeedback(message, className) {
+            feedbackText.textContent = message;
+            feedback.className = `mb-6 p-4 rounded-lg ${className}`;
+            feedback.classList.remove('hidden');
+        }
+
+        function updateScore() {
+            scoreSpan.textContent = score;
+            totalSpan.textContent = total;
+        }
+
+        function updateExerciseInfo() {
+            const chars = currentAlphabet === 'hiragana' ? hiraganaChars : katakanaChars;
+            const count = Object.keys(chars).length;
+            const alphabetName = currentAlphabet === 'hiragana' ? 'Hiragana' : 'Katakana';
+            exerciseInfo.textContent = `${alphabetName}: ${count} caratteri disponibili`;
+        }
+
+        // Initialize
+        renderCharacterGrid();
+        updateExerciseInfo();
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96f0b4a2169cbaa9',t:'MTc1NTE3NzE2NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
